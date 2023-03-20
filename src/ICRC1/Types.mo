@@ -3,8 +3,8 @@ import List "mo:base/List";
 import Time "mo:base/Time";
 import Result "mo:base/Result";
 
-import STMap "mo:StableTrieMap";
-import StableBuffer "mo:StableBuffer/StableBuffer";
+import STMap "./stable/StableTrieMap";
+import StableBuffer "./stable/StableBuffer";
 
 module {
 
@@ -13,6 +13,7 @@ module {
     public type BlockIndex = Nat;
     public type Subaccount = Blob;
     public type Balance = Nat;
+
     public type StableBuffer<T> = StableBuffer.StableBuffer<T>;
     public type StableTrieMap<K, V> = STMap.StableTrieMap<K, V>;
 
@@ -37,10 +38,33 @@ module {
     public type MetaDatum = (Text, Value);
     public type MetaData = [MetaDatum];
 
+    public type ApproveError = {
+        #BadFee : { expected_fee : Nat };
+        // The caller does not have enough funds to pay the approval fee.
+        #InsufficientFunds : { balance : Nat };
+        // The approval request expired before the ledger had a chance to apply it.
+        #Expired : { ledger_time : Nat64; };
+        #TooOld;
+        #CreatedInFuture: { ledger_time : Nat64 };
+        #Duplicate : { duplicate_of : Nat };
+        #TemporarilyUnavailable;
+        #GenericError : { error_code : Nat; message : Text };
+    };
+
+
+    public type ApproveResult = {
+        #Ok : TxIndex;
+        #Err : ApproveError;
+    };
+
     public type TxKind = {
         #mint;
         #burn;
         #transfer;
+    };
+
+    public type OperationKind = {
+        #approve;
     };
 
     public type Mint = {
@@ -86,6 +110,38 @@ module {
         created_at_time : ?Nat64;
     };
 
+
+    public type ApproveArgs = {
+        from_subaccount : ?Blob;
+        spender : Principal;
+        amount : Nat;
+        expires_at : ?Nat64;
+        fee : ?Nat;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+    };
+
+    public type Approve = {
+        kind : OperationKind;
+        from : Account;
+        spender : Account;
+        amount : Balance;
+        expires_at : ?Nat64;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+    };
+
+    public type AllowanceArgs = {
+        account : Account;
+        spender : Principal;
+    };
+
+    public type Allowance = {
+        allowance : Nat;
+        expires_at : ?Nat64;
+    };
+
     /// Internal representation of a transaction request
     public type TransactionRequest = {
         kind : TxKind;
@@ -101,11 +157,34 @@ module {
         };
     };
 
+
+    public type ApproveTxRequest = {
+        kind : OperationKind;
+        from : Account;
+        spender : Account;
+        amount : Balance;
+        expires_at : ?Nat64;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+        encoded : {
+            from : EncodedAccount;
+            to : EncodedAccount;
+        };
+    };
+
     public type Transaction = {
         kind : Text;
         mint : ?Mint;
         burn : ?Burn;
         transfer : ?Transfer;
+        index : TxIndex;
+        timestamp : Timestamp;
+    };
+
+    // apart from icrc1
+    public type ApproveTransaction = {
+        approve : Approve;
         index : TxIndex;
         timestamp : Timestamp;
     };
@@ -128,6 +207,9 @@ module {
         #Ok : TxIndex;
         #Err : TransferError;
     };
+
+
+    
 
     /// Interface for the ICRC token canister
     public type TokenInterface = actor {
@@ -227,6 +309,8 @@ module {
 
     public type AccountBalances = StableTrieMap<EncodedAccount, Balance>;
 
+    public type ApproveBalances = StableTrieMap<EncodedAccount, Allowance>;
+
     /// The details of the archive canister
     public type ArchiveData = {
         /// The reference to the archive canister
@@ -266,6 +350,9 @@ module {
         /// The balances of all accounts
         accounts : AccountBalances;
 
+        /// The balances of all appro
+        approve_accounts : ApproveBalances;
+
         /// The metadata for the token
         metadata : StableBuffer<MetaDatum>;
 
@@ -284,6 +371,9 @@ module {
         /// The recent transactions that have been processed by the ledger.
         /// Only the last 2000 transactions are stored before being archived.
         transactions : StableBuffer<Transaction>;
+
+
+        approve_transactions : StableBuffer<ApproveTransaction>;
 
         /// The record that stores the details to the archive canister and number of transactions stored in it
         archive : ArchiveData;

@@ -11,9 +11,9 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 
-import Itertools "mo:itertools/Iter";
-import StableBuffer "mo:StableBuffer/StableBuffer";
-import STMap "mo:StableTrieMap";
+import Itertools "itertools/Iter";
+import StableBuffer "stable/StableBuffer";
+import STMap "stable/StableTrieMap";
 
 import Account "Account";
 
@@ -274,6 +274,100 @@ module {
                         );
                     };
                     case (_) {};
+                };
+            };
+        };
+
+        #ok();
+    };
+
+
+    public func validate_approve_request(
+        token : T.TokenData,
+        tx_req : T.ApproveTxRequest,
+    ) : Result.Result<(), T.ApproveError> {
+
+        if (tx_req.from.owner == tx_req.spender.owner) {
+            return #err(
+                #GenericError({
+                    error_code = 0;
+                    message = "The approve Principal cannot be the same Principal as the approver.";
+                }),
+            );
+        };
+
+        if (not Account.validate(tx_req.from)) {
+            return #err(
+                #GenericError({
+                    error_code = 0;
+                    message = "Invalid account entered for sender. "  # debug_show(tx_req.from);
+                }),
+            );
+        };
+
+        if (not Account.validate(tx_req.spender)) {
+            return #err(
+                #GenericError({
+                    error_code = 0;
+                    message = "Invalid account entered for recipient " # debug_show(tx_req.spender);
+                }),
+            );
+        };
+
+        if (not validate_memo(tx_req.memo)) {
+            return #err(
+                #GenericError({
+                    error_code = 0;
+                    message = "Memo must not be more than 32 bytes";
+                }),
+            );
+        };
+
+        // seems it's not need to let amount >= 0, cause type Nat is >= 0 
+        if (tx_req.amount >= 0) {
+            return #err(
+                #GenericError({
+                    error_code = 0;
+                    message = "Amount must be greater than or euqal 0";
+                }),
+            );
+        };
+
+        switch (tx_req.kind) {
+            case (#approve) {
+                if (not validate_fee(token, tx_req.fee)) {
+                    return #err(
+                        #BadFee {
+                            expected_fee = token._fee;
+                        },
+                    );
+                };
+
+                let balance : T.Balance = Utils.get_balance(
+                    token.accounts,
+                    tx_req.encoded.from,
+                );
+
+                if (tx_req.amount > balance + token._fee) {
+                    return #err(#InsufficientFunds { balance = balance });
+                };
+            };
+        };
+
+        switch (tx_req.created_at_time) {
+            case (null) {};
+            case (?created_at_time) {
+
+                if (is_too_old(token, created_at_time)) {
+                    return #err(#TooOld);
+                };
+
+                if (is_in_future(token, created_at_time)) {
+                    return #err(
+                        #CreatedInFuture {
+                            ledger_time = Nat64.fromNat(Int.abs(Time.now()));
+                        },
+                    );
                 };
             };
         };

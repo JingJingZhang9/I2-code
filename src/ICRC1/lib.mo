@@ -11,8 +11,8 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import EC "mo:base/ExperimentalCycles";
 
-import Itertools "mo:itertools/Iter";
-import StableTrieMap "mo:StableTrieMap";
+import Itertools "itertools/Iter";
+import StableTrieMap "stable/StableTrieMap";
 
 import Account "Account";
 import T "Types";
@@ -64,6 +64,14 @@ module {
     public let MAX_TRANSACTION_BYTES : Nat64 = 196;
     public let MAX_TRANSACTIONS_PER_REQUEST = 5000;
 
+    public type ApproveArgs = T.ApproveArgs;
+
+    public type AllowanceArgs = T.AllowanceArgs;
+
+    public type Allowance = T.Allowance;
+
+    public type ApproveResult = T.ApproveResult;
+
     /// Initialize a new ICRC-1 token
     public func init(args : T.InitArgs) : T.TokenData {
         let {
@@ -96,6 +104,8 @@ module {
         };
 
         let accounts : T.AccountBalances = StableTrieMap.new();
+
+        let approve_accounts : T.ApproveBalances = StableTrieMap.new();
 
         var _minted_tokens = _burned_tokens;
 
@@ -131,9 +141,12 @@ module {
             min_burn_amount;
             minting_account;
             accounts;
+            approve_accounts;
             metadata = Utils.init_metadata(args);
             supported_standards = Utils.init_standards();
             transactions = SB.initPresized(MAX_TRANSACTIONS_IN_LEDGER);
+            approve_transactions = SB.initPresized(MAX_TRANSACTIONS_IN_LEDGER);
+            // approve_transactions = SB.initPresized(MAX_TRANSACTIONS_IN_LEDGER);
             permitted_drift;
             transaction_window;
             archive = {
@@ -209,6 +222,19 @@ module {
         Utils.get_balance(accounts, encoded_account);
     };
 
+
+    /// Retrieve the balance of a given account and spender
+    public func get_allowance_of({ approve_accounts } : T.TokenData, account : T.Account, spender: Principal) : T.Allowance {
+        let encoded_account = Account.encode(account);
+        let spender_account = {
+            owner = spender;
+            subaccount = null;
+        };
+        let encoded_account_spender = Account.encode(spender_account);
+        let gen_account = Utils.gen_account_from_two_account(encoded_account, encoded_account_spender);
+        Utils.get_allowance(approve_accounts, gen_account);
+    };
+
     /// Returns an array of standards supported by this token
     public func supported_standards(token : T.TokenData) : [T.SupportedStandard] {
         SB.toArray(token.supported_standards);
@@ -276,6 +302,49 @@ module {
         let index = SB.size(token.transactions) + token.archive.stored_txs;
         let tx = Utils.req_to_tx(tx_req, index);
         SB.add(token.transactions, tx);
+
+        // transfer transaction to archive if necessary
+        await* update_canister(token);
+
+        #Ok(tx.index);
+    };
+
+    /// Approve tokens from one account to another account
+    public func approve(token : T.TokenData, args : T.ApproveArgs, caller: Principal) : async* T.ApproveResult {
+
+        let from = {
+            owner = caller;
+            subaccount = args.from_subaccount;
+        };
+
+        let tx_kind = #approve;
+
+        let tx_req = Utils.create_approve_req(args, caller, tx_kind);
+
+        switch (Transfer.validate_approve_request(token, tx_req)) {
+            case (#err(errorType)) {
+                return #Err(errorType);
+            };
+            case (#ok(_)) {};
+        };
+
+        let { encoded; amount } = tx_req; 
+
+        // process transaction
+        switch(tx_req.kind){
+            case(#approve){
+                Utils.approve(token, tx_req);
+
+                // burn fee
+                // attention: fee is from caller account
+                Utils.burn_balance(token, encoded.from, token._fee);
+            };
+        };
+
+        // store transaction
+        let index = SB.size(token.approve_transactions) + token.archive.stored_txs;
+        let tx = Utils.approve_req_to_tx(tx_req, index);
+        SB.add(token.approve_transactions, tx);
 
         // transfer transaction to archive if necessary
         await* update_canister(token);

@@ -12,11 +12,12 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
+import Buffer "mo:base/Buffer";
 
-import ArrayModule "mo:array/Array";
-import Itertools "mo:itertools/Iter";
-import STMap "mo:StableTrieMap";
-import StableBuffer "mo:StableBuffer/StableBuffer";
+import ArrayModule "array/Array";
+import Itertools "itertools/Iter";
+import STMap "stable/StableTrieMap";
+import StableBuffer "stable/StableBuffer";
 
 import Account "Account";
 import T "Types";
@@ -124,6 +125,43 @@ module {
         };
     };
 
+
+    public func create_approve_req(
+        args : T.ApproveArgs,
+        owner : Principal,
+        tx_kind: T.OperationKind,
+    ) : T.ApproveTxRequest {
+        
+        let from = {
+            owner;
+            subaccount = args.from_subaccount;
+        };
+
+        let to = {
+            owner = args.spender;
+            subaccount = null;
+        };
+
+        let encoded = {
+            from = Account.encode(from);
+            to = Account.encode(to);
+        };
+
+        {
+            kind = tx_kind ;
+            from = from;
+            spender = to;
+            amount = args.amount;
+            expires_at = args.expires_at;
+            fee = args.fee;
+            memo = args.memo;
+            created_at_time = args.created_at_time;
+            // args with kind = #approve;
+            encoded;
+        };
+    };
+
+
     // Transforms the transaction kind from `variant` to `Text`
     public func kind_to_text(kind : T.TxKind) : Text {
         switch (kind) {
@@ -158,6 +196,16 @@ module {
         };
     };
 
+    public func approve_req_to_tx(tx_req : T.ApproveTxRequest, index: Nat) : T.ApproveTransaction {
+
+        {
+            kind = "APPROVE";
+            approve = tx_req;
+            index;
+            timestamp = Nat64.fromNat(Int.abs(Time.now()));
+        };
+    };
+
     public func div_ceil(n : Nat, d : Nat) : Nat {
         (n + d - 1) / d;
     };
@@ -179,6 +227,29 @@ module {
         };
     };
 
+    /// Retrieves the balance of an account
+    public func get_allowance(accounts : T.ApproveBalances, encoded_account : T.EncodedAccount) : T.Allowance {
+        let res = STMap.get(
+            accounts,
+            Blob.equal,
+            Blob.hash,
+            encoded_account,
+        );
+
+        switch (res) {
+            case (?balance) {
+                balance;
+            };
+            case (_) {
+                {
+                    allowance = 0;
+                    expires_at = null;
+                }
+            };
+        };
+    };
+
+
     /// Updates the balance of an account
     public func update_balance(
         accounts : T.AccountBalances,
@@ -187,6 +258,26 @@ module {
     ) {
         let prev_balance = get_balance(accounts, encoded_account);
         let updated_balance = update(prev_balance);
+
+        if (updated_balance != prev_balance) {
+            STMap.put(
+                accounts,
+                Blob.equal,
+                Blob.hash,
+                encoded_account,
+                updated_balance,
+            );
+        };
+    };
+
+
+    public func update_approve_balance(
+        accounts : T.ApproveBalances,
+        encoded_account : T.EncodedAccount,
+        update_allowance : (T.Allowance) -> T.Allowance,
+    ) {
+        let prev_balance = get_allowance(accounts, encoded_account);
+        let updated_balance = update_allowance(prev_balance);
 
         if (updated_balance != prev_balance) {
             STMap.put(
@@ -222,6 +313,35 @@ module {
                 balance + amount;
             },
         );
+    };
+
+
+    public func approve(
+        token : T.TokenData,
+        tx_req : T.ApproveTxRequest,
+    ) { 
+        let { encoded; amount;expires_at; } = tx_req;
+
+        update_approve_balance(
+            token.approve_accounts,
+            gen_account_from_two_account(encoded.from,encoded.to),
+            func(balance) {
+                {
+                    allowance = amount;
+                    expires_at = expires_at;
+                }
+                ;
+            },
+        );
+    };
+
+    /// create an account from Approver and Spender
+    public func gen_account_from_two_account(from : T.EncodedAccount, to : T.EncodedAccount) : T.EncodedAccount {
+        let from_buffer:Buffer.Buffer<Nat8> = Buffer.fromArray(Blob.toArray(from));
+        let to_buffer:Buffer.Buffer<Nat8> = Buffer.fromArray(Blob.toArray(to));
+        from_buffer.append(to_buffer);
+        let final_array = Buffer.toArray(from_buffer);
+        Blob.fromArray(final_array)
     };
 
     public func mint_balance(
