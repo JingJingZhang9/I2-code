@@ -63,6 +63,11 @@ module {
         #transfer;
     };
 
+
+    public type ICRC2TxKind = {
+        #transfer_from;
+    };
+
     public type OperationKind = {
         #approve;
     };
@@ -91,6 +96,20 @@ module {
     /// Arguments for a transfer operation
     public type TransferArgs = {
         from_subaccount : ?Subaccount;
+        to : Account;
+        amount : Balance;
+        fee : ?Balance;
+        memo : ?Blob;
+
+        /// The time at which the transaction was created.
+        /// If this is set, the canister will check for duplicate transactions and reject them.
+        created_at_time : ?Nat64;
+    };
+
+
+    /// Arguments for a transfer from operation
+    public type TransferFromArgs = {
+        from_subaccount : Account;
         to : Account;
         amount : Balance;
         fee : ?Balance;
@@ -157,6 +176,21 @@ module {
         };
     };
 
+    /// Internal representation of a transaction request
+    public type TransactionFromRequest = {
+        kind : ICRC2TxKind;
+        from : Account;
+        to : Account;
+        caller : Principal;
+        amount : Balance;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+        encoded : {
+            from : EncodedAccount;
+            to : EncodedAccount;
+        };
+    };
 
     public type ApproveTxRequest = {
         kind : OperationKind;
@@ -202,14 +236,28 @@ module {
         #TemporarilyUnavailable;
         #GenericError : { error_code : Nat; message : Text };
     };
-    
+
     public type TransferResult = {
         #Ok : TxIndex;
         #Err : TransferError;
     };
 
+    public type TransferFromError = {
+        #BadFee : { expected_fee : Balance };
+        #BadBurn : { min_burn_amount : Balance };
+        #InsufficientFunds : { balance : Balance };
+        #InsufficientAllowance : { allowance : Balance };
+        #TooOld;
+        #CreatedInFuture : { ledger_time : Timestamp };
+        #Duplicate : { duplicate_of : TxIndex };
+        #TemporarilyUnavailable;
+        #GenericError : { error_code : Nat; message : Text };
+    };
 
-    
+    public type TransferFromResult = {
+        #Ok : TxIndex;
+        #Err : TransferFromError;
+    };   
 
     /// Interface for the ICRC token canister
     public type TokenInterface = actor {

@@ -32,6 +32,7 @@ module {
     public type Transaction = T.Transaction;
     public type Balance = T.Balance;
     public type TransferArgs = T.TransferArgs;
+    public type TransferFromArgs = T.TransferFromArgs;
     public type Mint = T.Mint;
     public type BurnArgs = T.BurnArgs;
     public type TransactionRequest = T.TransactionRequest;
@@ -59,6 +60,7 @@ module {
     public type ArchivedTransaction = T.ArchivedTransaction;
 
     public type TransferResult = T.TransferResult;
+    public type TransferFromResult = T.TransferFromResult;
 
     public let MAX_TRANSACTIONS_IN_LEDGER = 2000;
     public let MAX_TRANSACTION_BYTES : Nat64 = 196;
@@ -309,6 +311,68 @@ module {
         #Ok(tx.index);
     };
 
+    /// Transfers tokens from one account to another account (minting and burning included)
+    public func transfer_from(
+        token : T.TokenData,
+        args : T.TransferFromArgs,
+        caller : Principal,
+    ) : async* T.TransferFromResult {
+
+        let tx_kind = #transfer_from;
+
+        let tx_transfer_from_req = Utils.create_transfer_from_req(args, caller, tx_kind);
+
+        switch (Transfer.validate_transfer_from_request(token, tx_transfer_from_req)) {
+            case (#err(errorType)) {
+                return #Err(errorType);
+            };
+            case (#ok(_)) {};
+        };
+
+        // icrc2 storage is complete, use normal transfer instead
+        let normal_transfer_args = {
+            from_subaccount = tx_transfer_from_req.from.subaccount;
+            to = tx_transfer_from_req.to;
+            amount = tx_transfer_from_req.amount;
+            fee = tx_transfer_from_req.fee;
+            memo = tx_transfer_from_req.memo;
+            created_at_time = tx_transfer_from_req.created_at_time;
+        };
+
+        let normal_tx_kind = #transfer;
+
+        let tx_req = Utils.create_transfer_req(normal_transfer_args, caller, normal_tx_kind);
+
+        switch (Transfer.validate_request(token, tx_req)) {
+            case (#err(errorType)) {
+                return #Err(errorType);
+            };
+            case (#ok(_)) {};
+        };
+
+        let { encoded; amount } = tx_req; 
+
+        // process transaction
+        Utils.transfer_balance(token, tx_req);
+
+        // burn fee
+        Utils.burn_balance(token, encoded.from, token._fee);
+
+        // decrease allowance
+        let caller_encoded = Account.encode({owner = caller; subaccount = null;});
+        let allowance_key_account = Utils.gen_account_from_two_account(encoded.from, caller_encoded);
+        Utils.decrease_allowance(token, allowance_key_account, amount);
+
+        // store transaction
+        let index = SB.size(token.transactions) + token.archive.stored_txs;
+        let tx = Utils.req_to_tx(tx_req, index);
+        SB.add(token.transactions, tx);
+
+        // transfer transaction to archive if necessary
+        await* update_canister(token);
+
+        #Ok(tx.index);
+    };
     /// Approve tokens from one account to another account
     public func approve(token : T.TokenData, args : T.ApproveArgs, caller: Principal) : async* T.ApproveResult {
 

@@ -79,6 +79,10 @@ shared ({ caller = _owner }) actor class Token(
         await* ICRC1.approve(token, args, caller);
     };
 
+    public shared ({ caller }) func icrc2_transfer_from(args: ICRC1.TransferFromArgs) : async ICRC1.TransferFromResult {
+        await* ICRC1.transfer_from(token, args, caller);
+    };
+
     public shared query func icrc2_allowance(args : ICRC1.AllowanceArgs) : async ICRC1.Allowance {
         ICRC1.get_allowance_of(token, args.account, args.spender);
     };

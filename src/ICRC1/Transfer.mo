@@ -286,7 +286,9 @@ module {
         token : T.TokenData,
         tx_req : T.ApproveTxRequest,
     ) : Result.Result<(), T.ApproveError> {
-
+        // TODO: The spender's allowance for the { owner = caller; subaccount = from_subaccount } 
+        // increases by the amount (or decreases if the amount is negative). If the total allowance 
+        // is negative, the ledger MUST reset the allowance to zero.
         if (tx_req.from.owner == tx_req.spender.owner) {
             return #err(
                 #GenericError({
@@ -369,6 +371,71 @@ module {
                         },
                     );
                 };
+            };
+        };
+
+        #ok();
+    };
+
+    /// Checks if a transfer request is valid
+    public func validate_transfer_from_request(
+        token : T.TokenData,
+        tx_req : T.TransactionFromRequest,
+    ) : Result.Result<(), T.TransferFromError> {
+
+        // check allowance
+        let allowance_pair : T.Allowance = Utils.get_allowance(
+            token.approve_accounts,
+            tx_req.encoded.from,
+        );
+
+        if (tx_req.amount > allowance_pair.allowance + token._fee) {
+            return #err(#InsufficientAllowance { allowance = allowance_pair.allowance });
+        };
+
+        // check balance
+        let balance : T.Balance = Utils.get_balance(
+            token.accounts,
+            tx_req.encoded.from,
+        );
+
+        if (tx_req.amount > balance + token._fee) {
+            return #err(#InsufficientFunds { balance = balance });
+        };
+
+        // check expire time
+        // TODO: let expire time be a new type of error
+        switch (allowance_pair.expires_at) {
+            case (null) {};
+            case (?expires_at_time) {
+                switch (tx_req.created_at_time) {
+                    case (null) {};
+                    case (?created_at_time) {
+                        if (created_at_time > expires_at_time) {
+                            return #err(#InsufficientFunds { balance = 0 });
+                        };
+                    };
+                };
+            };
+        };
+
+        switch (tx_req.created_at_time) {
+            case (null) {};
+            case (?created_at_time) {
+
+                if (is_too_old(token, created_at_time)) {
+                    return #err(#TooOld);
+                };
+
+                if (is_in_future(token, created_at_time)) {
+                    return #err(
+                        #CreatedInFuture {
+                            ledger_time = Nat64.fromNat(Int.abs(Time.now()));
+                        },
+                    );
+                };
+
+                // check deduplicate is in transfer validate_request
             };
         };
 

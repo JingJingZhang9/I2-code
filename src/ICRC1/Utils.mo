@@ -125,6 +125,27 @@ module {
         };
     };
 
+    // Formats the different operation arguements into
+    // a `TransactionFromRequest`, an new internal type to access fields easier for icrc2.
+    public func create_transfer_from_req(
+        args : T.TransferFromArgs,
+        caller : Principal,
+        tx_kind: T.ICRC2TxKind,
+    ) : T.TransactionFromRequest {
+        
+
+        let encoded = {
+            from = Account.encode(args.from_subaccount);
+            to = Account.encode(args.to);
+        };
+
+        {
+            args with kind = #transfer_from;
+            from = args.from_subaccount;
+            caller;
+            encoded;
+        };
+    };
 
     public func create_approve_req(
         args : T.ApproveArgs,
@@ -275,9 +296,30 @@ module {
         accounts : T.ApproveBalances,
         encoded_account : T.EncodedAccount,
         update_allowance : (T.Allowance) -> T.Allowance,
+        change_expires_at : Bool,
     ) {
         let prev_balance = get_allowance(accounts, encoded_account);
         let updated_balance = update_allowance(prev_balance);
+
+        let prev_allowance = prev_balance.allowance;
+        let prev_expires_at = prev_balance.expires_at;
+
+        let updated_allowance = updated_balance.allowance;
+        let updated_expires_at = updated_balance.expires_at;
+
+        // update expire time
+        var expires_at: ?Nat64 = null;
+        if (change_expires_at) {
+            expires_at := updated_expires_at;
+        }
+        else {
+            expires_at := prev_expires_at;
+        };
+
+        let insert_balance = {
+            allowance = updated_allowance;
+            expires_at;
+        };
 
         if (updated_balance != prev_balance) {
             STMap.put(
@@ -285,7 +327,7 @@ module {
                 Blob.equal,
                 Blob.hash,
                 encoded_account,
-                updated_balance,
+                insert_balance,
             );
         };
     };
@@ -320,22 +362,23 @@ module {
         token : T.TokenData,
         tx_req : T.ApproveTxRequest,
     ) { 
-        let { encoded; amount;expires_at; } = tx_req;
+        let { encoded; amount; expires_at; } = tx_req;
 
         update_approve_balance(
             token.approve_accounts,
-            gen_account_from_two_account(encoded.from,encoded.to),
+            gen_account_from_two_account(encoded.from, encoded.to),
             func(balance) {
                 {
-                    allowance = amount;
+                    allowance = balance.allowance;
                     expires_at = expires_at;
                 }
                 ;
             },
+            true,
         );
     };
 
-    /// create an account from Approver and Spender
+    /// create an account from Approver as `from` account and Spender as `to` account
     public func gen_account_from_two_account(from : T.EncodedAccount, to : T.EncodedAccount) : T.EncodedAccount {
         let from_buffer:Buffer.Buffer<Nat8> = Buffer.fromArray(Blob.toArray(from));
         let to_buffer:Buffer.Buffer<Nat8> = Buffer.fromArray(Blob.toArray(to));
@@ -374,6 +417,25 @@ module {
         );
 
         token._burned_tokens += amount;
+    };
+
+    public func decrease_allowance(
+        token : T.TokenData,
+        encoded_account : T.EncodedAccount,
+        amount : T.Balance,
+    ) {
+        update_approve_balance(
+            token.approve_accounts,
+            encoded_account,
+            func(balance) {
+                {
+                    allowance = balance.allowance - amount;
+                    expires_at = null;
+                };
+            },
+            false,
+        );
+
     };
 
     // Stable Buffer Module with some additional functions
