@@ -159,7 +159,7 @@ module {
                 #GenericError({
                     error_code = 0;
                     message = "The sender cannot have the same account as the recipient.";
-                }),
+                })
             );
         };
 
@@ -167,8 +167,8 @@ module {
             return #err(
                 #GenericError({
                     error_code = 0;
-                    message = "Invalid account entered for sender. "  # debug_show(tx_req.from);
-                }),
+                    message = "Invalid account entered for sender. " # debug_show (tx_req.from);
+                })
             );
         };
 
@@ -176,8 +176,8 @@ module {
             return #err(
                 #GenericError({
                     error_code = 0;
-                    message = "Invalid account entered for recipient " # debug_show(tx_req.to);
-                }),
+                    message = "Invalid account entered for recipient " # debug_show (tx_req.to);
+                })
             );
         };
 
@@ -186,7 +186,7 @@ module {
                 #GenericError({
                     error_code = 0;
                     message = "Memo must not be more than 32 bytes";
-                }),
+                })
             );
         };
 
@@ -195,7 +195,7 @@ module {
                 #GenericError({
                     error_code = 0;
                     message = "Amount must be greater than 0";
-                }),
+                })
             );
         };
 
@@ -205,7 +205,7 @@ module {
                     return #err(
                         #BadFee {
                             expected_fee = token._fee;
-                        },
+                        }
                     );
                 };
 
@@ -227,14 +227,14 @@ module {
                         #GenericError({
                             error_code = 0;
                             message = "Cannot mint more than " # Nat.toText(remaining_tokens) # " tokens";
-                        }),
+                        })
                     );
                 };
             };
             case (#burn) {
                 if (tx_req.to == token.minting_account and tx_req.amount < token.min_burn_amount) {
                     return #err(
-                        #BadBurn { min_burn_amount = token.min_burn_amount },
+                        #BadBurn { min_burn_amount = token.min_burn_amount }
                     );
                 };
 
@@ -261,7 +261,7 @@ module {
                     return #err(
                         #CreatedInFuture {
                             ledger_time = Nat64.fromNat(Int.abs(Time.now()));
-                        },
+                        }
                     );
                 };
 
@@ -270,7 +270,7 @@ module {
                         return #err(
                             #Duplicate {
                                 duplicate_of = tx_index;
-                            },
+                            }
                         );
                     };
                     case (_) {};
@@ -281,20 +281,19 @@ module {
         #ok();
     };
 
-
     public func validate_approve_request(
         token : T.TokenData,
         tx_req : T.ApproveTxRequest,
     ) : Result.Result<(), T.ApproveError> {
-        // TODO: The spender's allowance for the { owner = caller; subaccount = from_subaccount } 
-        // increases by the amount (or decreases if the amount is negative). If the total allowance 
+        // TODO: The spender's allowance for the { owner = caller; subaccount = from_subaccount }
+        // increases by the amount (or decreases if the amount is negative). If the total allowance
         // is negative, the ledger MUST reset the allowance to zero.
         if (tx_req.from.owner == tx_req.spender.owner) {
             return #err(
                 #GenericError({
                     error_code = 0;
                     message = "The approve Principal cannot be the same Principal as the approver.";
-                }),
+                })
             );
         };
 
@@ -302,8 +301,8 @@ module {
             return #err(
                 #GenericError({
                     error_code = 0;
-                    message = "Invalid account entered for sender. "  # debug_show(tx_req.from);
-                }),
+                    message = "Invalid account entered for sender. " # debug_show (tx_req.from);
+                })
             );
         };
 
@@ -311,8 +310,8 @@ module {
             return #err(
                 #GenericError({
                     error_code = 0;
-                    message = "Invalid account entered for recipient " # debug_show(tx_req.spender);
-                }),
+                    message = "Invalid account entered for recipient " # debug_show (tx_req.spender);
+                })
             );
         };
 
@@ -321,17 +320,17 @@ module {
                 #GenericError({
                     error_code = 0;
                     message = "Memo must not be more than 32 bytes";
-                }),
+                })
             );
         };
 
-        // seems it's not need to let amount >= 0, cause type Nat is >= 0 
+        // seems it's not need to let amount >= 0, cause type Nat is >= 0
         if (tx_req.amount >= 0) {
             return #err(
                 #GenericError({
                     error_code = 0;
                     message = "Amount must be greater than or euqal 0";
-                }),
+                })
             );
         };
 
@@ -341,7 +340,7 @@ module {
                     return #err(
                         #BadFee {
                             expected_fee = token._fee;
-                        },
+                        }
                     );
                 };
 
@@ -368,7 +367,7 @@ module {
                     return #err(
                         #CreatedInFuture {
                             ledger_time = Nat64.fromNat(Int.abs(Time.now()));
-                        },
+                        }
                     );
                 };
             };
@@ -431,7 +430,7 @@ module {
                     return #err(
                         #CreatedInFuture {
                             ledger_time = Nat64.fromNat(Int.abs(Time.now()));
-                        },
+                        }
                     );
                 };
 

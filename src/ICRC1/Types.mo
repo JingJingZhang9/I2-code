@@ -43,14 +43,13 @@ module {
         // The caller does not have enough funds to pay the approval fee.
         #InsufficientFunds : { balance : Nat };
         // The approval request expired before the ledger had a chance to apply it.
-        #Expired : { ledger_time : Nat64; };
+        #Expired : { ledger_time : Nat64 };
         #TooOld;
-        #CreatedInFuture: { ledger_time : Nat64 };
+        #CreatedInFuture : { ledger_time : Nat64 };
         #Duplicate : { duplicate_of : Nat };
         #TemporarilyUnavailable;
         #GenericError : { error_code : Nat; message : Text };
     };
-
 
     public type ApproveResult = {
         #Ok : TxIndex;
@@ -62,7 +61,6 @@ module {
         #burn;
         #transfer;
     };
-
 
     public type ICRC2TxKind = {
         #transfer_from;
@@ -106,7 +104,6 @@ module {
         created_at_time : ?Nat64;
     };
 
-
     /// Arguments for a transfer from operation
     public type TransferFromArgs = {
         from_subaccount : Account;
@@ -128,7 +125,6 @@ module {
         memo : ?Blob;
         created_at_time : ?Nat64;
     };
-
 
     public type ApproveArgs = {
         from_subaccount : ?Blob;
@@ -257,7 +253,7 @@ module {
     public type TransferFromResult = {
         #Ok : TxIndex;
         #Err : TransferFromError;
-    };   
+    };
 
     /// Interface for the ICRC token canister
     public type TokenInterface = actor {
@@ -328,7 +324,7 @@ module {
         min_burn_amount : Balance;
 
         /// optional settings for the icrc1 canister
-        advanced_settings: ?AdvancedSettings
+        advanced_settings : ?AdvancedSettings;
     };
 
     /// [InitArgs](#type.InitArgs) with optional fields for initializing a token canister
@@ -344,13 +340,13 @@ module {
         /// optional value that defaults to the caller if not provided
         minting_account : ?Account;
 
-        advanced_settings: ?AdvancedSettings;
+        advanced_settings : ?AdvancedSettings;
     };
 
     /// Additional settings for the [InitArgs](#type.InitArgs) type during initialization of an icrc1 token canister
     public type AdvancedSettings = {
         /// needed if a token ever needs to be migrated to a new canister
-        burned_tokens : Balance; 
+        burned_tokens : Balance;
         transaction_window : Timestamp;
         permitted_drift : Timestamp;
     };
@@ -420,7 +416,6 @@ module {
         /// Only the last 2000 transactions are stored before being archived.
         transactions : StableBuffer<Transaction>;
 
-
         approve_transactions : StableBuffer<ApproveTransaction>;
 
         /// The record that stores the details to the archive canister and number of transactions stored in it
@@ -435,7 +430,7 @@ module {
     };
 
     public type TransactionRange = {
-        transactions: [Transaction];
+        transactions : [Transaction];
     };
 
     public type QueryArchiveFn = shared query (GetTransactionsRequest) -> async TransactionRange;
@@ -447,7 +442,7 @@ module {
         length : Nat;
 
         /// The callback function to query the archive canister
-        callback: QueryArchiveFn;
+        callback : QueryArchiveFn;
     };
 
     public type GetTransactionsResponse = {
@@ -464,7 +459,7 @@ module {
         archived_transactions : [ArchivedTransaction];
     };
 
-    /// Functions supported by the rosetta 
+    /// Functions supported by the rosetta
     public type RosettaInterface = actor {
         get_transactions : shared query (GetTransactionsRequest) -> async GetTransactionsResponse;
     };

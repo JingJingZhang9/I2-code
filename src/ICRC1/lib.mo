@@ -92,13 +92,13 @@ module {
         var permitted_drift = 60_000_000_000;
         var transaction_window = 86_400_000_000_000;
 
-        switch(advanced_settings){
-            case(?options) {
+        switch (advanced_settings) {
+            case (?options) {
                 _burned_tokens := options.burned_tokens;
                 permitted_drift := Nat64.toNat(options.permitted_drift);
                 transaction_window := Nat64.toNat(options.transaction_window);
             };
-            case(null) { };
+            case (null) {};
         };
 
         if (not Account.validate(minting_account)) {
@@ -115,7 +115,7 @@ module {
 
             if (not Account.validate(account)) {
                 Debug.trap(
-                    "Invalid Account: Account at index " # debug_show i # " is invalid in 'initial_balances'",
+                    "Invalid Account: Account at index " # debug_show i # " is invalid in 'initial_balances'"
                 );
             };
 
@@ -224,9 +224,8 @@ module {
         Utils.get_balance(accounts, encoded_account);
     };
 
-
     /// Retrieve the balance of a given account and spender
-    public func get_allowance_of({ approve_accounts } : T.TokenData, account : T.Account, spender: Principal) : T.Allowance {
+    public func get_allowance_of({ approve_accounts } : T.TokenData, account : T.Account, spender : Principal) : T.Allowance {
         let encoded_account = Account.encode(account);
         let spender_account = {
             owner = spender;
@@ -266,11 +265,11 @@ module {
         };
 
         let tx_kind = if (from == token.minting_account) {
-            #mint
+            #mint;
         } else if (args.to == token.minting_account) {
-            #burn
+            #burn;
         } else {
-            #transfer
+            #transfer;
         };
 
         let tx_req = Utils.create_transfer_req(args, caller, tx_kind);
@@ -282,17 +281,17 @@ module {
             case (#ok(_)) {};
         };
 
-        let { encoded; amount } = tx_req; 
+        let { encoded; amount } = tx_req;
 
         // process transaction
-        switch(tx_req.kind){
-            case(#mint){
+        switch (tx_req.kind) {
+            case (#mint) {
                 Utils.mint_balance(token, encoded.to, amount);
             };
-            case(#burn){
+            case (#burn) {
                 Utils.burn_balance(token, encoded.from, amount);
             };
-            case(#transfer){
+            case (#transfer) {
                 Utils.transfer_balance(token, tx_req);
 
                 // burn fee
@@ -350,7 +349,7 @@ module {
             case (#ok(_)) {};
         };
 
-        let { encoded; amount } = tx_req; 
+        let { encoded; amount } = tx_req;
 
         // process transaction
         Utils.transfer_balance(token, tx_req);
@@ -359,7 +358,10 @@ module {
         Utils.burn_balance(token, encoded.from, token._fee);
 
         // decrease allowance
-        let caller_encoded = Account.encode({owner = caller; subaccount = null;});
+        let caller_encoded = Account.encode({
+            owner = caller;
+            subaccount = null;
+        });
         let allowance_key_account = Utils.gen_account_from_two_account(encoded.from, caller_encoded);
         Utils.decrease_allowance(token, allowance_key_account, amount);
 
@@ -374,7 +376,7 @@ module {
         #Ok(tx.index);
     };
     /// Approve tokens from one account to another account
-    public func approve(token : T.TokenData, args : T.ApproveArgs, caller: Principal) : async* T.ApproveResult {
+    public func approve(token : T.TokenData, args : T.ApproveArgs, caller : Principal) : async* T.ApproveResult {
 
         let from = {
             owner = caller;
@@ -392,11 +394,11 @@ module {
             case (#ok(_)) {};
         };
 
-        let { encoded; amount } = tx_req; 
+        let { encoded; amount } = tx_req;
 
         // process transaction
-        switch(tx_req.kind){
-            case(#approve){
+        switch (tx_req.kind) {
+            case (#approve) {
                 Utils.approve(token, tx_req);
 
                 // burn fee
@@ -424,7 +426,7 @@ module {
                 #GenericError {
                     error_code = 401;
                     message = "Unauthorized: Only the minting_account can mint tokens.";
-                },
+                }
             );
         };
 
@@ -476,13 +478,13 @@ module {
         let req_end = req.start + req.length;
         let tx_end = archive.stored_txs + SB.size(transactions);
 
-        var txs_in_canister: [T.Transaction] = [];
-        
+        var txs_in_canister : [T.Transaction] = [];
+
         if (req.start < tx_end and req_end >= archive.stored_txs) {
             first_index := Nat.max(req.start, archive.stored_txs);
             let tx_start_index = (first_index - archive.stored_txs) : Nat;
 
-            txs_in_canister:= SB.slice(transactions, tx_start_index, req.length);
+            txs_in_canister := SB.slice(transactions, tx_start_index, req.length);
         };
 
         let archived_range = if (req.start < archive.stored_txs) {
@@ -547,7 +549,7 @@ module {
         };
 
         let res = await archive.canister.append_transactions(
-            SB.toArray(transactions),
+            SB.toArray(transactions)
         );
 
         switch (res) {

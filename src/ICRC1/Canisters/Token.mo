@@ -11,7 +11,7 @@ import ICRC1 "..";
 import Archive "Archive";
 
 shared ({ caller = _owner }) actor class Token(
-    init_args : ICRC1.TokenInitArgs,
+    init_args : ICRC1.TokenInitArgs
 ) : async ICRC1.FullInterface {
 
     let icrc1_args : ICRC1.InitArgs = {
@@ -75,11 +75,11 @@ shared ({ caller = _owner }) actor class Token(
         await* ICRC1.burn(token, args, caller);
     };
 
-    public shared ({ caller }) func icrc2_approve(args: ICRC1.ApproveArgs) : async ICRC1.ApproveResult {
+    public shared ({ caller }) func icrc2_approve(args : ICRC1.ApproveArgs) : async ICRC1.ApproveResult {
         await* ICRC1.approve(token, args, caller);
     };
 
-    public shared ({ caller }) func icrc2_transfer_from(args: ICRC1.TransferFromArgs) : async ICRC1.TransferFromResult {
+    public shared ({ caller }) func icrc2_transfer_from(args : ICRC1.TransferFromArgs) : async ICRC1.TransferFromResult {
         await* ICRC1.transfer_from(token, args, caller);
     };
 
