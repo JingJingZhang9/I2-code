@@ -87,8 +87,6 @@ shared ({ caller = _owner }) actor class Token(
         ICRC1.get_allowance_of(token, args.account, args.spender);
     };
 
-    // public shared ({ caller }) func icrc2_transfer_from(args: ICRC.TransferResult) : async ICRC1.Tr
-
     // Functions for integration with the rosetta standard
     public shared query func get_transactions(req : ICRC1.GetTransactionsRequest) : async ICRC1.GetTransactionsResponse {
         ICRC1.get_transactions(token, req);
