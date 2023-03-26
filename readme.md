@@ -2,10 +2,10 @@
 This repo contains the implementation of the 
 [ICRC-2](https://github.com/dfinity/ICRC-1/blob/main/standards/ICRC-2/README.md). 
 
-## References and other implementations
-- [demergent-labs/ICRC-1 (Typescript)](https://github.com/demergent-labs/ICRC-1)
-- [Ledger ref in Motoko](https://github.com/dfinity/ledger-ref/blob/main/src/Ledger.mo)
-- [ICRC1 Rosetta API](https://github.com/dfinity/ic/blob/master/rs/rosetta-api/icrc1/ledger)
+## References 
+- [demergent-labs/ICRC-1 (Typescript)](https://github.com/NatLabs/icrc1)
+- [ICRC1 test](https://github.com/NatLabs/icrc1/blob/main/example/icrc1/main.mo)
+
 
 ## Documentation 
 - [markdown](https://github.com/NatLabs/icrc1/blob/main/docs/ICRC1/lib.md#function-init)
