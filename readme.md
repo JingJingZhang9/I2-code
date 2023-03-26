@@ -3,23 +3,14 @@ This repo contains the implementation of the
 [ICRC-2](https://github.com/dfinity/ICRC-1/blob/main/standards/ICRC-2/README.md). 
 
 ## References 
-- [demergent-labs/ICRC-1 (Typescript)](https://github.com/NatLabs/icrc1)
+- [ICRC-1](https://github.com/NatLabs/icrc1)
 - [ICRC1 test](https://github.com/NatLabs/icrc1/blob/main/example/icrc1/main.mo)
 
-
-## Documentation 
-- [markdown](https://github.com/NatLabs/icrc1/blob/main/docs/ICRC1/lib.md#function-init)
-- [web](https://natlabs.github.io/icrc1/ICRC1/lib.html#init)
  
 ## Getting Started 
-- Expose the ICRC-1 token functions from your canister 
-  - Import the `icrc1` lib and expose them in an `actor` class.
+- Expose the ICRC-2 from your canister 
+  - Import the `icrc2` lib and expose them in an `actor` class.
   
-    Take a look at the [examples](./example/icrc1/main.mo)
-    
-- Launch the basic token with all the standard functions for ICRC-1
-  - Install the [mops](https://j4mwm-bqaaa-aaaam-qajbq-cai.ic0.app/#/docs/install) package manager
-  - Replace the values enclosed in `< >` with your desired values and run in the terminal 
 
   ```motoko
     git clone https://github.com/NatLabs/icrc1
