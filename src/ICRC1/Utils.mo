@@ -39,11 +39,16 @@ module {
         url = "https://github.com/dfinity/ICRC-1";
     };
 
+    public let icrc2_standard : T.SupportedStandard = {
+        name = "ICRC-2";
+        url = "https://github.com/dfinity/ICRC-1/blob/roman-icrc2-cap/standards/ICRC-2";
+    };
+
     // Creates a Stable Buffer with the default supported standards and returns it.
     public func init_standards() : StableBuffer.StableBuffer<T.SupportedStandard> {
         let standards = SB.initPresized<T.SupportedStandard>(4);
         SB.add(standards, default_standard);
-
+        SB.add(standards, icrc2_standard);
         standards;
     };
 
