@@ -8,12 +8,12 @@ This repo contains the implementation of the
 
  
 ## Getting Started 
-- Expose the ICRC-2 from your canister 
-  - Import the `icrc2` lib and expose them in an `actor` class.
+- Expose the ICRC-1 from your canister 
+  - Import the `icrc1` lib and expose them in an `actor` class.
   
 
   ```motoko
-    git clone https://github.com/JingJingZhang9/I3-code.git
+    git clone https://github.com/NatLabs/icrc1.git
     dfx start --background --clean
 
     dfx deploy icrc1 --argument '( record {                     
@@ -73,9 +73,12 @@ This repo contains the implementation of the
 
 > The fields for the `advanced_settings` record are documented [here](./docs/ICRC1/Types.md#type-advancedsettings)
 
-## Textual Representation of the ICRC-1 Accounts
-This library implements the [Textual Representation](https://github.com/dfinity/ICRC-1/blob/main/standards/ICRC-1/README.md#textual-representation-of-accounts) format for accounts defined by the standard. It utilizes this implementation to encode each account into a sequence of bytes for improved hashing and comparison.
-To help with this process, the library provides functions in the [ICRC1/Account](./src/ICRC1/Account.mo) module for [encoding](./docs/ICRC1/Account.md#encode), [decoding](./docs/ICRC1/Account.md#decode), [converting from text](./docs/ICRC1/Account.md#fromText), and [converting to text](./docs/ICRC1/Account.md#toText).
+## Textual Representation of the ICRC-2 
+This library implements the https://github.com/dfinity/ICRC-1/blob/main/standards/ICRC-2/README.md .
+
+ICRC-2 is an extension of the ICRC-1 standard. ICRC-2 provides a way for account owners to delegate token transfer authorization to a third party, allowing the third party to perform transfers on behalf of the owner:
+icrc2_approve: Authorizes the spender to transfer a certain amount of tokens on behalf of the caller from the account { owner = caller; subaccount = from_subaccount }. The number of transfers the spender can initiate from the caller's account is unlimited as long as the total amounts and fees of these transfers do not exceed the allowance.
+icrc2_transfer_from: Transfers a certain amount of tokens between two accounts.
 
 
 ## Tests
@@ -84,17 +87,7 @@ To help with this process, the library provides functions in the [ICRC1/Account]
 - Run `make test` 
 - Run `make actor-test`
 
-#### [Dfinity's ICRC-1 Reference Tests](https://github.com/dfinity/ICRC-1/tree/main/test)
-- Install Rust and Cargo via [rustup](https://rustup.rs/)
 
-```
-    curl https://sh.rustup.rs -sSf | sh
-```
-- Then run the `ref-test` command
-
-```
-    make ref-test
-```
 
 ## Funding
 
