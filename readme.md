@@ -13,7 +13,7 @@ This repo contains the implementation of the
   
 
   ```motoko
-    git clone https://github.com/NatLabs/icrc1.git
+    git clone https://github.com/JingJingZhang9/I3-code.git
     dfx start --background --clean
 
     dfx deploy icrc1 --argument '( record {                     
