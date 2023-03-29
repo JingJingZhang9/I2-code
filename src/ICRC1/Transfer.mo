@@ -323,9 +323,8 @@ module {
                 })
             );
         };
-
-        // seems it's not need to let amount >= 0, cause type Nat is >= 0
-        if (tx_req.amount >= 0) {
+        // seems it's not need to let amount < 0, cause type Nat is >= 0 always
+        if (tx_req.amount < 0) {
             return #err(
                 #GenericError({
                     error_code = 0;
@@ -382,10 +381,16 @@ module {
         tx_req : T.TransactionFromRequest,
     ) : Result.Result<(), T.TransferFromError> {
 
+        let encoded_caller_account = Account.encode({
+            owner = tx_req.caller;
+            subaccount = null;
+            });
+
+        let account_pair = Utils.gen_account_from_two_account(tx_req.encoded.from, encoded_caller_account);
         // check allowance
         let allowance_pair : T.Allowance = Utils.get_allowance(
             token.approve_accounts,
-            tx_req.encoded.from,
+            account_pair,
         );
 
         if (tx_req.amount > allowance_pair.allowance + token._fee) {

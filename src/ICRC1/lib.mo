@@ -339,8 +339,10 @@ module {
         };
 
         let normal_tx_kind = #transfer;
-
-        let tx_req = Utils.create_transfer_req(normal_transfer_args, caller, normal_tx_kind);
+        let tx_req = Utils.create_transfer_req(normal_transfer_args, 
+            args.from_subaccount.owner, 
+            normal_tx_kind
+        );
 
         switch (Transfer.validate_request(token, tx_req)) {
             case (#err(errorType)) {
