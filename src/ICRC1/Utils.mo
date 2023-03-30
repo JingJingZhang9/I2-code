@@ -368,7 +368,7 @@ module {
             gen_account_from_two_account(encoded.from, encoded.to),
             func(balance) {
                 {
-                    allowance = balance.allowance;
+                    allowance = amount;
                     expires_at = expires_at;
                 };
             },

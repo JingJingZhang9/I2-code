@@ -237,7 +237,7 @@ module {
                             token.max_supply == args.max_supply,
 
                             token.minting_account == args.minting_account,
-                            SB.toArray(token.supported_standards) == [U.default_standard],
+                            SB.toArray(token.supported_standards) == [U.default_standard, U.icrc2_standard],
                             SB.size(token.transactions) == 0,
                         ]);
                     },
@@ -370,7 +370,7 @@ module {
                             ICRC1.supported_standards(token) == [{
                                 name = "ICRC-1";
                                 url = "https://github.com/dfinity/ICRC-1";
-                            }],
+                            }, U.icrc2_standard],
                         );
                     },
                 ),
@@ -570,10 +570,11 @@ module {
                             do {
                                 let args = default_token_args;
                                 let token = ICRC1.init(args);
+                                Debug.print(debug_show("expect ap:", 1200 * (10 ** Nat8.toNat(token.decimals))));
 
                                 let mint_args = {
                                     to = user1;
-                                    amount = 200 * (10 ** Nat8.toNat(token.decimals));
+                                    amount = 11200 * (10 ** Nat8.toNat(token.decimals));
                                     memo = null;
                                     created_at_time = null;
                                 };
@@ -601,11 +602,11 @@ module {
                                 );
 
                                 assertAllTrue([
-                                    res == #Ok(1),
+                                    res == #Ok(0),
                                     ICRC1.get_allowance_of(token, user1, canister.owner).allowance == 1200 * (10 ** Nat8.toNat(token.decimals)),
                                     token._burned_tokens == ICRC1.balance_from_float(token, 5),
-                                    ICRC1.balance_of(token, user1) == ICRC1.balance_from_float(token, 195),
-                                    ICRC1.total_supply(token) == ICRC1.balance_from_float(token, 195),
+                                    ICRC1.balance_of(token, user1) == ICRC1.balance_from_float(token, 11195),
+                                    ICRC1.total_supply(token) == ICRC1.balance_from_float(token, 11195),
                                 ]);
                             },
                         ),
@@ -634,9 +635,9 @@ module {
                                 );
 
                                 let approve_args : T.ApproveArgs = {
-                                    from_subaccount = null;
+                                    from_subaccount = user1.subaccount;
                                     spender = canister.owner;
-                                    amount = 50 * (10 ** Nat8.toNat(token.decimals));
+                                    amount = 60 * (10 ** Nat8.toNat(token.decimals));
                                     fee = ?token._fee;
                                     memo = null;
                                     created_at_time = null;
@@ -666,7 +667,7 @@ module {
 
                                 assertAllTrue([
                                     res == #Ok(1),
-                                    ICRC1.get_allowance_of(token, user1, canister.owner).allowance == 1150 * (10 ** Nat8.toNat(token.decimals)),
+                                    ICRC1.get_allowance_of(token, user1, canister.owner).allowance == 10 * (10 ** Nat8.toNat(token.decimals)),
                                     ICRC1.balance_of(token, user1) == ICRC1.balance_from_float(token, 140),
                                     token._burned_tokens == ICRC1.balance_from_float(token, 10),
                                     ICRC1.balance_of(token, user2) == ICRC1.balance_from_float(token, 50),
