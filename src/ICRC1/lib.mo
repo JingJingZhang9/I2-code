@@ -11,8 +11,8 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import EC "mo:base/ExperimentalCycles";
 
-import Itertools "itertools/Iter";
-import StableTrieMap "stable/StableTrieMap";
+import Itertools "mo:itertools/Iter";
+import StableTrieMap "mo:StableTrieMap";
 
 import Account "Account";
 import T "Types";

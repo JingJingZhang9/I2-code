@@ -3,7 +3,7 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 
-import Itertools "../../src/ICRC1/itertools/Iter";
+import Itertools "mo:itertools/Iter";
 
 import Account "../../src/ICRC1/Account";
 import ActorSpec "../utils/ActorSpec";

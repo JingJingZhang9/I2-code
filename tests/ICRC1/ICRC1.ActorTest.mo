@@ -5,8 +5,8 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Principal "mo:base/Principal";
 
-import Itertools "../../src/ICRC1/itertools/Iter";
-import StableBuffer "../../src/ICRC1/stable/StableBuffer";
+import Itertools "mo:itertools/Iter";
+import StableBuffer "mo:StableBuffer/StableBuffer";
 
 import ActorSpec "../utils/ActorSpec";
 

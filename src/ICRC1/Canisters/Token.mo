@@ -5,7 +5,7 @@ import Time "mo:base/Time";
 
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
-import SB "../stable/StableBuffer";
+import SB "mo:StableBuffer/StableBuffer";
 
 import ICRC1 "..";
 import Archive "Archive";
