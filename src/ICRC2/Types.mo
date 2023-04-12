@@ -13,6 +13,7 @@ module {
     public type BlockIndex = Nat;
     public type Subaccount = Blob;
     public type Balance = Nat;
+
     public type StableBuffer<T> = StableBuffer.StableBuffer<T>;
     public type StableTrieMap<K, V> = STMap.StableTrieMap<K, V>;
 
@@ -37,10 +38,36 @@ module {
     public type MetaDatum = (Text, Value);
     public type MetaData = [MetaDatum];
 
+    public type ApproveError = {
+        #BadFee : { expected_fee : Nat };
+        // The caller does not have enough funds to pay the approval fee.
+        #InsufficientFunds : { balance : Nat };
+        // The approval request expired before the ledger had a chance to apply it.
+        #Expired : { ledger_time : Nat64 };
+        #TooOld;
+        #CreatedInFuture : { ledger_time : Nat64 };
+        #Duplicate : { duplicate_of : Nat };
+        #TemporarilyUnavailable;
+        #GenericError : { error_code : Nat; message : Text };
+    };
+
+    public type ApproveResult = {
+        #Ok : TxIndex;
+        #Err : ApproveError;
+    };
+
     public type TxKind = {
         #mint;
         #burn;
         #transfer;
+    };
+
+    public type ICRC2TxKind = {
+        #transfer_from;
+    };
+
+    public type OperationKind = {
+        #approve;
     };
 
     public type Mint = {
@@ -77,6 +104,19 @@ module {
         created_at_time : ?Nat64;
     };
 
+    /// Arguments for a transfer from operation
+    public type TransferFromArgs = {
+        from_subaccount : Account;
+        to : Account;
+        amount : Balance;
+        fee : ?Balance;
+        memo : ?Blob;
+
+        /// The time at which the transaction was created.
+        /// If this is set, the canister will check for duplicate transactions and reject them.
+        created_at_time : ?Nat64;
+    };
+
     public type Transfer = {
         from : Account;
         to : Account;
@@ -86,12 +126,74 @@ module {
         created_at_time : ?Nat64;
     };
 
+    public type ApproveArgs = {
+        from_subaccount : ?Blob;
+        spender : Principal;
+        amount : Nat;
+        expires_at : ?Nat64;
+        fee : ?Nat;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+    };
+
+    public type Approve = {
+        kind : OperationKind;
+        from : Account;
+        spender : Account;
+        amount : Balance;
+        expires_at : ?Nat64;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+    };
+
+    public type AllowanceArgs = {
+        account : Account;
+        spender : Principal;
+    };
+
+    public type Allowance = {
+        allowance : Nat;
+        expires_at : ?Nat64;
+    };
+
     /// Internal representation of a transaction request
     public type TransactionRequest = {
         kind : TxKind;
         from : Account;
         to : Account;
         amount : Balance;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+        encoded : {
+            from : EncodedAccount;
+            to : EncodedAccount;
+        };
+    };
+
+    /// Internal representation of a transaction request
+    public type TransactionFromRequest = {
+        kind : ICRC2TxKind;
+        from : Account;
+        to : Account;
+        caller : Principal;
+        amount : Balance;
+        fee : ?Balance;
+        memo : ?Blob;
+        created_at_time : ?Nat64;
+        encoded : {
+            from : EncodedAccount;
+            to : EncodedAccount;
+        };
+    };
+
+    public type ApproveTxRequest = {
+        kind : OperationKind;
+        from : Account;
+        spender : Account;
+        amount : Balance;
+        expires_at : ?Nat64;
         fee : ?Balance;
         memo : ?Blob;
         created_at_time : ?Nat64;
@@ -110,6 +212,13 @@ module {
         timestamp : Timestamp;
     };
 
+    // apart from icrc1
+    public type ApproveTransaction = {
+        approve : Approve;
+        index : TxIndex;
+        timestamp : Timestamp;
+    };
+
     public type TimeError = {
         #TooOld;
         #CreatedInFuture : { ledger_time : Timestamp };
@@ -123,44 +232,61 @@ module {
         #TemporarilyUnavailable;
         #GenericError : { error_code : Nat; message : Text };
     };
-    
+
     public type TransferResult = {
         #Ok : TxIndex;
         #Err : TransferError;
+    };
+
+    public type TransferFromError = {
+        #BadFee : { expected_fee : Balance };
+        #BadBurn : { min_burn_amount : Balance };
+        #InsufficientFunds : { balance : Balance };
+        #InsufficientAllowance : { allowance : Balance };
+        #TooOld;
+        #CreatedInFuture : { ledger_time : Timestamp };
+        #Duplicate : { duplicate_of : TxIndex };
+        #TemporarilyUnavailable;
+        #GenericError : { error_code : Nat; message : Text };
+    };
+
+    public type TransferFromResult = {
+        #Ok : TxIndex;
+        #Err : TransferFromError;
     };
 
     /// Interface for the ICRC token canister
     public type TokenInterface = actor {
 
         /// Returns the name of the token
-        icrc1_name : shared query () -> async Text;
+        icrc2_name : shared query () -> async Text;
 
         /// Returns the symbol of the token
-        icrc1_symbol : shared query () -> async Text;
+        icrc2_symbol : shared query () -> async Text;
 
         /// Returns the number of decimals the token uses
-        icrc1_decimals : shared query () -> async Nat8;
+        icrc2_decimals : shared query () -> async Nat8;
 
         /// Returns the fee charged for each transfer
-        icrc1_fee : shared query () -> async Balance;
+        icrc2_fee : shared query () -> async Balance;
 
         /// Returns the tokens metadata
-        icrc1_metadata : shared query () -> async MetaData;
+        icrc2_metadata : shared query () -> async MetaData;
 
         /// Returns the total supply of the token
-        icrc1_total_supply : shared query () -> async Balance;
+        icrc2_total_supply : shared query () -> async Balance;
 
         /// Returns the account that is allowed to mint new tokens
-        icrc1_minting_account : shared query () -> async ?Account;
+        icrc2_minting_account : shared query () -> async ?Account;
 
         /// Returns the balance of the given account
-        icrc1_balance_of : shared query (Account) -> async Balance;
+        icrc2_balance_of : shared query (Account) -> async Balance;
 
         /// Transfers the given amount of tokens from the sender to the recipient
-        icrc1_transfer : shared (TransferArgs) -> async TransferResult;
+        icrc2_transfer : shared (TransferArgs) -> async TransferResult;
 
         /// Returns the standards supported by this token's implementation
-        icrc1_supported_standards : shared query () -> async [SupportedStandard];
+        icrc2_supported_standards : shared query () -> async [SupportedStandard];
 
     };
 
@@ -198,7 +324,7 @@ module {
         min_burn_amount : Balance;
 
         /// optional settings for the icrc1 canister
-        advanced_settings: ?AdvancedSettings
+        advanced_settings : ?AdvancedSettings;
     };
 
     /// [InitArgs](#type.InitArgs) with optional fields for initializing a token canister
@@ -214,18 +340,20 @@ module {
         /// optional value that defaults to the caller if not provided
         minting_account : ?Account;
 
-        advanced_settings: ?AdvancedSettings;
+        advanced_settings : ?AdvancedSettings;
     };
 
     /// Additional settings for the [InitArgs](#type.InitArgs) type during initialization of an icrc1 token canister
     public type AdvancedSettings = {
         /// needed if a token ever needs to be migrated to a new canister
-        burned_tokens : Balance; 
+        burned_tokens : Balance;
         transaction_window : Timestamp;
         permitted_drift : Timestamp;
     };
 
     public type AccountBalances = StableTrieMap<EncodedAccount, Balance>;
+
+    public type ApproveBalances = StableTrieMap<EncodedAccount, Allowance>;
 
     /// The details of the archive canister
     public type ArchiveData = {
@@ -266,6 +394,9 @@ module {
         /// The balances of all accounts
         accounts : AccountBalances;
 
+        /// The balances of all appro
+        approve_accounts : ApproveBalances;
+
         /// The metadata for the token
         metadata : StableBuffer<MetaDatum>;
 
@@ -285,6 +416,8 @@ module {
         /// Only the last 2000 transactions are stored before being archived.
         transactions : StableBuffer<Transaction>;
 
+        approve_transactions : StableBuffer<ApproveTransaction>;
+
         /// The record that stores the details to the archive canister and number of transactions stored in it
         archive : ArchiveData;
     };
@@ -297,7 +430,7 @@ module {
     };
 
     public type TransactionRange = {
-        transactions: [Transaction];
+        transactions : [Transaction];
     };
 
     public type QueryArchiveFn = shared query (GetTransactionsRequest) -> async TransactionRange;
@@ -309,7 +442,7 @@ module {
         length : Nat;
 
         /// The callback function to query the archive canister
-        callback: QueryArchiveFn;
+        callback : QueryArchiveFn;
     };
 
     public type GetTransactionsResponse = {
@@ -326,7 +459,7 @@ module {
         archived_transactions : [ArchivedTransaction];
     };
 
-    /// Functions supported by the rosetta 
+    /// Functions supported by the rosetta
     public type RosettaInterface = actor {
         get_transactions : shared query (GetTransactionsRequest) -> async GetTransactionsResponse;
     };
