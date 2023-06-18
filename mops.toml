@@ -10,4 +10,4 @@ name = "icrc1"
 version = "0.0.1"
 description = "A full implementation of the ICRC-1 fungible token standard"
 repository = "https://github.com/NatLabs/icrc1"
-keywords = ["icrc1", "fungible", "token", "standard", "dfinity"]
+keywords = [ "icrc1", "fungible", "token", "standard", "dfinity" ]
