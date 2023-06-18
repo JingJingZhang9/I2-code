@@ -42,6 +42,9 @@ module {
         #BadFee : { expected_fee : Nat };
         // The caller does not have enough funds to pay the approval fee.
         #InsufficientFunds : { balance : Nat };
+        // The caller specified the [expected_allowance] field, and the current
+        // allowance did not match the given value.
+        #AllowanceChanged : {current_allowance : Nat};
         // The approval request expired before the ledger had a chance to apply it.
         #Expired : { ledger_time : Nat64 };
         #TooOld;
@@ -134,6 +137,7 @@ module {
         fee : ?Nat;
         memo : ?Blob;
         created_at_time : ?Nat64;
+        expected_allowance : ?Nat;
     };
 
     public type Approve = {
@@ -149,7 +153,7 @@ module {
 
     public type AllowanceArgs = {
         account : Account;
-        spender : Principal;
+        spender : Account;
     };
 
     public type Allowance = {
@@ -201,6 +205,7 @@ module {
             from : EncodedAccount;
             to : EncodedAccount;
         };
+        expected_allowance : ?Nat;
     };
 
     public type Transaction = {

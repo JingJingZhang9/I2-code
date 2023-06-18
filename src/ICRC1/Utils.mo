@@ -41,7 +41,7 @@ module {
 
     public let icrc2_standard : T.SupportedStandard = {
         name = "ICRC-2";
-        url = "https://github.com/dfinity/ICRC-1/blob/roman-icrc2-cap/standards/ICRC-2";
+        url = "https://github.com/dfinity/ICRC-1/tree/main/standards/ICRC-2";
     };
 
     // Creates a Stable Buffer with the default supported standards and returns it.
@@ -181,6 +181,7 @@ module {
             fee = args.fee;
             memo = args.memo;
             created_at_time = args.created_at_time;
+            expected_allowance = args.expected_allowance;
             // args with kind = #approve;
             encoded;
         };

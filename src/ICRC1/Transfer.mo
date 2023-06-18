@@ -354,6 +354,22 @@ module {
             };
         };
 
+        // check expected allowance
+        switch (tx_req.expected_allowance) {
+            case (null) {};
+            case (?expected_allowance) {
+                let account_pair = Utils.gen_account_from_two_account(tx_req.encoded.from, tx_req.encoded.to);
+                let saved_allowance = Utils.get_allowance(token.approve_accounts, account_pair);
+                if (expected_allowance != saved_allowance.allowance) {
+                    return #err(
+                        #AllowanceChanged {
+                            current_allowance = saved_allowance.allowance;
+                        }
+                    );
+                };
+            };
+        };
+
         switch (tx_req.created_at_time) {
             case (null) {};
             case (?created_at_time) {
