@@ -11,8 +11,8 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import EC "mo:base/ExperimentalCycles";
 
-import Itertools "itertools/Iter";
-import StableTrieMap "stable/StableTrieMap";
+import Itertools "mo:itertools/Iter";
+import StableTrieMap "mo:StableTrieMap";
 
 import Account "Account";
 import T "Types";
@@ -225,13 +225,9 @@ module {
     };
 
     /// Retrieve the balance of a given account and spender
-    public func get_allowance_of({ approve_accounts } : T.TokenData, account : T.Account, spender : Principal) : T.Allowance {
+    public func get_allowance_of({ approve_accounts } : T.TokenData, account : T.Account, spender : Account) : T.Allowance {
         let encoded_account = Account.encode(account);
-        let spender_account = {
-            owner = spender;
-            subaccount = null;
-        };
-        let encoded_account_spender = Account.encode(spender_account);
+        let encoded_account_spender = Account.encode(spender);
         let gen_account = Utils.gen_account_from_two_account(encoded_account, encoded_account_spender);
         Utils.get_allowance(approve_accounts, gen_account);
     };

@@ -5,8 +5,8 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Principal "mo:base/Principal";
 
-import Itertools "../../src/ICRC1/itertools/Iter";
-import StableBuffer "../../src/ICRC1/stable/StableBuffer";
+import Itertools "mo:itertools/Iter";
+import StableBuffer "mo:StableBuffer/StableBuffer";
 
 import ActorSpec "../utils/ActorSpec";
 
@@ -593,6 +593,7 @@ module {
                                     memo = null;
                                     created_at_time = null;
                                     expires_at = null;
+                                    expected_allowance = null;
                                 };
 
                                 let res = await* ICRC1.approve(
@@ -603,7 +604,7 @@ module {
 
                                 assertAllTrue([
                                     res == #Ok(0),
-                                    ICRC1.get_allowance_of(token, user1, canister.owner).allowance == 1200 * (10 ** Nat8.toNat(token.decimals)),
+                                    ICRC1.get_allowance_of(token, user1, canister).allowance == 1200 * (10 ** Nat8.toNat(token.decimals)),
                                     token._burned_tokens == ICRC1.balance_from_float(token, 5),
                                     ICRC1.balance_of(token, user1) == ICRC1.balance_from_float(token, 11195),
                                     ICRC1.total_supply(token) == ICRC1.balance_from_float(token, 11195),
@@ -642,6 +643,7 @@ module {
                                     memo = null;
                                     created_at_time = null;
                                     expires_at = null;
+                                    expected_allowance = null;
                                 };
 
                                 ignore await* ICRC1.approve(
@@ -667,7 +669,7 @@ module {
 
                                 assertAllTrue([
                                     res == #Ok(1),
-                                    ICRC1.get_allowance_of(token, user1, canister.owner).allowance == 10 * (10 ** Nat8.toNat(token.decimals)),
+                                    ICRC1.get_allowance_of(token, user1, canister).allowance == 10 * (10 ** Nat8.toNat(token.decimals)),
                                     ICRC1.balance_of(token, user1) == ICRC1.balance_from_float(token, 140),
                                     token._burned_tokens == ICRC1.balance_from_float(token, 10),
                                     ICRC1.balance_of(token, user2) == ICRC1.balance_from_float(token, 50),

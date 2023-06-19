@@ -11,9 +11,9 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 
-import Itertools "itertools/Iter";
-import StableBuffer "stable/StableBuffer";
-import STMap "stable/StableTrieMap";
+import Itertools "mo:itertools/Iter";
+import StableBuffer "mo:StableBuffer/StableBuffer";
+import STMap "mo:StableTrieMap";
 
 import Account "Account";
 
@@ -214,8 +214,8 @@ module {
                     tx_req.encoded.from,
                 );
 
-                if (tx_req.amount > balance + token._fee) {
-                    return #err(#InsufficientFunds { balance = balance });
+                if (tx_req.amount + token._fee > balance) {
+                    return #err(#InsufficientFunds { balance });
                 };
             };
 
@@ -244,7 +244,7 @@ module {
                 );
 
                 if (balance < tx_req.amount) {
-                    return #err(#InsufficientFunds { balance = balance });
+                    return #err(#InsufficientFunds { balance });
                 };
             };
         };
@@ -350,6 +350,22 @@ module {
 
                 if (tx_req.amount > balance + token._fee) {
                     return #err(#InsufficientFunds { balance = balance });
+                };
+            };
+        };
+
+        // check expected allowance
+        switch (tx_req.expected_allowance) {
+            case (null) {};
+            case (?expected_allowance) {
+                let account_pair = Utils.gen_account_from_two_account(tx_req.encoded.from, tx_req.encoded.to);
+                let saved_allowance = Utils.get_allowance(token.approve_accounts, account_pair);
+                if (expected_allowance != saved_allowance.allowance) {
+                    return #err(
+                        #AllowanceChanged {
+                            current_allowance = saved_allowance.allowance;
+                        }
+                    );
                 };
             };
         };

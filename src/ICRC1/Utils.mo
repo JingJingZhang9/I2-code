@@ -14,10 +14,10 @@ import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 
-import ArrayModule "array/Array";
-import Itertools "itertools/Iter";
-import STMap "stable/StableTrieMap";
-import StableBuffer "stable/StableBuffer";
+import ArrayModule "mo:array/Array";
+import Itertools "mo:itertools/Iter";
+import STMap "mo:StableTrieMap";
+import StableBuffer "mo:StableBuffer/StableBuffer";
 
 import Account "Account";
 import T "Types";
@@ -41,7 +41,7 @@ module {
 
     public let icrc2_standard : T.SupportedStandard = {
         name = "ICRC-2";
-        url = "https://github.com/dfinity/ICRC-1/blob/roman-icrc2-cap/standards/ICRC-2";
+        url = "https://github.com/dfinity/ICRC-1/tree/main/standards/ICRC-2";
     };
 
     // Creates a Stable Buffer with the default supported standards and returns it.
@@ -181,6 +181,7 @@ module {
             fee = args.fee;
             memo = args.memo;
             created_at_time = args.created_at_time;
+            expected_allowance = args.expected_allowance;
             // args with kind = #approve;
             encoded;
         };
